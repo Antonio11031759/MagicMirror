@@ -62,7 +62,8 @@
 		"test:prettier": "prettier . --check",
 		"test:spelling": "cspell . --gitignore",
 		"test:unit": "NODE_ENV=test jest --selectProjects unit",
-		"telegram:bot": "node telegram-bot.js"
+		"telegram:bot": "node telegram-bot.js",
+		"inbox:userbot": "python3 inbox_userbot.py"
 	},
 	"lint-staged": {
 		"*": "prettier --ignore-unknown --write",

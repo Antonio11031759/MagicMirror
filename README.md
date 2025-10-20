@@ -43,6 +43,34 @@ npm run telegram:bot
 
 Добавьте бота администратором в приватный канал "Mirror Inbox" (у бота должен быть доступ к чтению сообщений канала). Публикуйте тексты — файл будет обновляться.
 
+## 🔐 Вариант: Userbot (Telethon) c входом по QR (личные сообщения)
+
+Если нужно читать личные сообщения без участия отправителей, используйте userbot с входом по QR:
+
+```bash
+cd ~/MagicMirror
+python3 -m pip install --user telethon python-dotenv 'qrcode[pil]' --break-system-packages || true
+
+# Правка окружения для userbot
+mkdir -p /home/anton/mirror_inbox
+chmod 700 /home/anton/mirror_inbox
+cat > /home/anton/mirror_inbox/.env << 'EOF'
+API_ID=
+API_HASH=
+SESSION_NAME=mirror_inbox
+OUTPUT_JSON=/home/anton/mirror_inbox/inbox.json
+MAX_ITEMS=3
+TZ=Europe/Berlin
+ALLOW_USERS=
+EOF
+chmod 600 /home/anton/mirror_inbox/.env
+
+# Первый запуск (покажет QR)
+npm run inbox:userbot
+```
+
+Сканируйте QR в Telegram: Settings → Devices → Link Desktop Device. После входа скрипт сохранит последние 3 ЛС в `/home/anton/mirror_inbox/inbox.json` и будет обновлять файл.
+
 ## 🚀 Быстрая установка на Raspberry Pi
 
 ### Предварительные требования

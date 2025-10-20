@@ -1,4 +1,24 @@
 [Unit]
+Description=Mirror Inbox Userbot (Telethon QR)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=anton
+Group=anton
+WorkingDirectory=/home/anton/mirror_inbox
+Environment=INBOX_DIR=/home/anton/mirror_inbox
+ExecStart=/usr/bin/python3 /home/anton/MagicMirror/inbox_userbot.py
+Restart=always
+RestartSec=5
+TimeoutStartSec=60
+Nice=5
+
+[Install]
+WantedBy=multi-user.target
+
+[Unit]
 Description=Telegram USERBOT inbox writer (Telethon)
 After=network-online.target
 Wants=network-online.target
