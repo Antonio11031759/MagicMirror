@@ -128,6 +128,18 @@ let config = {
 				broadcastNewsUpdates: true
 			}
 		},
+		{
+			module: "MMM-LocalInbox",
+			position: "bottom_right",
+			config: {
+				jsonPath: "/home/anton/mirror_inbox/inbox.json",
+				pollInterval: 3000,
+				maxItems: 3,
+				maxChars: 70,
+				showTime: true,
+				header: "Сообщения"
+			}
+		},
 	]
 };
 
