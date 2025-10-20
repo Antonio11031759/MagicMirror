@@ -84,9 +84,9 @@ EOF
 
 ```bash
 # Копируем готовые файлы из проекта
-cp /home/anton/Mirror/userbot_daemon.py .
-cp /home/anton/Mirror/env_config .env
-cp /home/anton/Mirror/inbox.json .
+cp /home/anton/MagicMirror/userbot_daemon.py .
+cp /home/anton/MagicMirror/env_config .env
+cp /home/anton/MagicMirror/inbox.json .
 chmod +x userbot_daemon.py
 ```
 
