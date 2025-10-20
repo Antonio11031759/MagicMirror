@@ -1,0 +1,12 @@
+.wa-container { width: 100%; }
+.wa-grid { display: grid; grid-template-rows: auto 1fr; }
+.wa-row { display: grid; grid-template-columns: repeat(7, 1fr); gap: .5rem; }
+.wa-col { text-align: center; }
+.wa-col-header { font-weight: 600; opacity: .85; }
+.wa-col-events { text-align: left; }
+.wa-col-events ul { list-style: none; margin: 0; padding: 0; }
+.wa-item { margin: .15rem 0; }
+.wa-time { opacity: .7; margin-right: .35rem; font-size: 85%; }
+.wa-title { font-weight: 500; }
+.wa-empty { opacity: .4; font-style: italic; text-align: center; }
+
