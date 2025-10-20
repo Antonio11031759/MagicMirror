@@ -1,0 +1,31 @@
+{
+  "name": "MMM-TelegramInbox",
+  "version": "1.0.0",
+  "description": "MagicMirror модуль для отображения последних сообщений Telegram",
+  "main": "MMM-TelegramInbox.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "magicmirror",
+    "telegram",
+    "inbox",
+    "messages",
+    "telethon"
+  ],
+  "author": "Anton Aliabev",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yourusername/MMM-TelegramInbox.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/MMM-TelegramInbox/issues"
+  },
+  "homepage": "https://github.com/yourusername/MMM-TelegramInbox#readme",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

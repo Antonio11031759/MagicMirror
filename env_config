@@ -1,0 +1,5 @@
+API_ID=22134486
+API_HASH=31370c2a0de171b2d1e15c0c72ab755
+SESSION_NAME=mirror_inbox
+OUTPUT_JSON=/home/anton/MagicMirror/modules/MMM-TelegramInbox/inbox.json
+MAX_ITEMS=3

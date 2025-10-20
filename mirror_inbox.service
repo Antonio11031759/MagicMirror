@@ -1,0 +1,17 @@
+[Unit]
+Description=Telegram USERBOT inbox writer (Telethon)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=anton
+Group=anton
+WorkingDirectory=/home/anton/MagicMirror/modules/MMM-TelegramInbox
+ExecStart=/usr/bin/python3 /home/anton/MagicMirror/modules/MMM-TelegramInbox/userbot_daemon.py
+Restart=always
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target
