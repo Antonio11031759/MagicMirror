@@ -1,30 +1,7 @@
 {
   "name": "MMM-LocalInbox",
   "version": "1.0.0",
-  "description": "MagicMirror модуль для отображения последних сообщений Telegram",
+  "description": "Minimal inbox viewer from local JSON for MagicMirror",
   "main": "MMM-LocalInbox.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [
-    "magicmirror",
-    "telegram",
-    "inbox",
-    "messages"
-  ],
-  "author": "Anton Aliabev",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/yourusername/MMM-LocalInbox.git"
-  },
-  "bugs": {
-    "url": "https://github.com/yourusername/MMM-LocalInbox/issues"
-  },
-  "homepage": "https://github.com/yourusername/MMM-LocalInbox#readme",
-  "engines": {
-    "node": ">=14.0.0"
-  },
-  "dependencies": {},
-  "devDependencies": {}
+  "license": "MIT"
 }

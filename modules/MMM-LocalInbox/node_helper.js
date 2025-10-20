@@ -1,89 +1,42 @@
 /* global NodeHelper, Log */
+const fs = require("fs");
 
 NodeHelper.register("MMM-LocalInbox", {
-    // Инициализация
     start: function() {
         Log.info("Starting node helper for: " + this.name);
-        
-        this.config = null;
-        this.pollTimer = null;
     },
 
-    // Обработка конфигурации от фронтенда
-    socketNotificationReceived: function(notification, payload) {
-        if (notification === "INBOX_CONFIG") {
-            this.config = payload;
-            Log.info("Received config:", this.config);
-            
-            // Запускаем опрос JSON файла
-            this.startPolling();
-        }
-    },
+    socketNotificationReceived: async function(notification, payload) {
+        if (notification !== "INBOX_READ") return;
 
-    // Запуск периодического опроса JSON файла
-    startPolling: function() {
-        if (this.pollTimer) {
-            clearInterval(this.pollTimer);
-        }
-        
-        if (!this.config || !this.config.jsonPath) {
-            Log.error("No config or jsonPath provided");
+        const jsonPath = payload && payload.jsonPath;
+        const maxItems = (payload && payload.maxItems) || 3;
+
+        if (!jsonPath) {
+            this.sendSocketNotification("INBOX_DATA", { items: [], error: "jsonPath not provided" });
             return;
         }
-        
-        // Первое чтение сразу
-        this.readInboxData();
-        
-        // Затем по таймеру
-        this.pollTimer = setInterval(() => {
-            this.readInboxData();
-        }, this.config.pollInterval || 5000);
-        
-        Log.info(`Started polling inbox data every ${this.config.pollInterval}ms`);
-    },
 
-    // Чтение данных из JSON файла
-    readInboxData: function() {
-        const fs = require("fs");
-        const path = require("path");
-        
         try {
-            // Проверяем существование файла
-            if (!fs.existsSync(this.config.jsonPath)) {
-                Log.warn(`Inbox file not found: ${this.config.jsonPath}`);
-                this.sendSocketNotification("INBOX_DATA", []);
+            if (!fs.existsSync(jsonPath)) {
+                this.sendSocketNotification("INBOX_DATA", { items: [], error: null });
                 return;
             }
-            
-            // Читаем файл
-            const data = fs.readFileSync(this.config.jsonPath, "utf8");
-            
-            // Парсим JSON
-            const messages = JSON.parse(data);
-            
-            // Проверяем, что это массив
-            if (!Array.isArray(messages)) {
-                Log.error("Invalid JSON format: expected array");
-                this.sendSocketNotification("INBOX_DATA", []);
-                return;
-            }
-            
-            // Отправляем данные на фронтенд
-            this.sendSocketNotification("INBOX_DATA", messages);
-            
-        } catch (error) {
-            Log.error(`Error reading inbox data: ${error.message}`);
-            // При ошибке отправляем пустой массив
-            this.sendSocketNotification("INBOX_DATA", []);
-        }
-    },
 
-    // Очистка при остановке
-    stop: function() {
-        if (this.pollTimer) {
-            clearInterval(this.pollTimer);
-            this.pollTimer = null;
+            const raw = fs.readFileSync(jsonPath, "utf8");
+            let data = [];
+            try {
+                const parsed = JSON.parse(raw);
+                data = Array.isArray(parsed) ? parsed : [];
+            } catch (e) {
+                this.sendSocketNotification("INBOX_DATA", { items: [], error: "Invalid JSON" });
+                return;
+            }
+
+            const items = data.slice(0, maxItems);
+            this.sendSocketNotification("INBOX_DATA", { items, error: null });
+        } catch (error) {
+            this.sendSocketNotification("INBOX_DATA", { items: [], error: String(error && error.message || error) });
         }
-        Log.info("Stopped node helper for: " + this.name);
     }
 });

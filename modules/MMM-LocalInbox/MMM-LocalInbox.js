@@ -1,95 +1,94 @@
-/* global Module, Log, moment */
+/* global Module, Log */
 
 Module.register("MMM-LocalInbox", {
-    // Настройки по умолчанию
     defaults: {
         jsonPath: "/home/anton/mirror_inbox/inbox.json",
-        pollInterval: 5000,   // мс
+        pollInterval: 5000,
         maxItems: 3,
         maxChars: 80,
         showTime: true,
-        header: ""            // необязательный заголовок
+        header: "Сообщения"
     },
 
-    // Инициализация модуля
     start: function() {
-        Log.info("Starting module: " + this.name);
-        
-        // Отправляем конфигурацию в node_helper
-        this.sendSocketNotification("INBOX_CONFIG", this.config);
-        
-        // Инициализируем данные
-        this.messages = [];
+        this.items = [];
+        this.error = null;
+        this.readNow();
+        this.scheduleUpdate();
     },
 
-    // Обработка уведомлений от node_helper
+    scheduleUpdate: function() {
+        const interval = this.config.pollInterval || 5000;
+        setInterval(() => this.readNow(), interval);
+    },
+
+    readNow: function() {
+        this.sendSocketNotification("INBOX_READ", { jsonPath: this.config.jsonPath, maxItems: this.config.maxItems });
+    },
+
     socketNotificationReceived: function(notification, payload) {
-        if (notification === "INBOX_DATA") {
-            this.messages = payload || [];
-            this.updateDom();
-        }
+        if (notification !== "INBOX_DATA") return;
+        this.items = (payload && payload.items) || [];
+        this.error = payload ? payload.error : null;
+        this.updateDom({ animationSpeed: 300 });
     },
 
-    // Создание DOM элемента
+    getHeader: function() {
+        return this.config.header || "";
+    },
+
     getDom: function() {
         const wrapper = document.createElement("div");
-        wrapper.className = "inbox-container";
+        wrapper.className = "localinbox";
 
-        // Заголовок (если задан)
-        if (this.config.header) {
-            const header = document.createElement("div");
-            header.className = "inbox-header";
-            header.innerHTML = this.config.header;
-            wrapper.appendChild(header);
+        if (this.error) {
+            const err = document.createElement("div");
+            err.style.opacity = 0.7;
+            err.style.fontSize = "85%";
+            err.textContent = this.error;
+            wrapper.appendChild(err);
+            return wrapper;
         }
 
-        // Контейнер для сообщений
-        const messagesContainer = document.createElement("div");
-        messagesContainer.className = "inbox-messages";
-
-        if (this.messages.length === 0) {
-            // Нет сообщений
-            const noMessages = document.createElement("div");
-            noMessages.className = "inbox-no-messages";
-            noMessages.innerHTML = "Нет новых сообщений";
-            messagesContainer.appendChild(noMessages);
-        } else {
-            // Отображаем сообщения
-            const messagesToShow = this.messages.slice(0, this.config.maxItems);
-            
-            messagesToShow.forEach((message) => {
-                const messageElement = document.createElement("div");
-                messageElement.className = "inbox-message";
-                
-                // Формируем строку сообщения
-                let messageText = "";
-                
-                if (this.config.showTime) {
-                    messageText += `<span class="inbox-time">${message.time}</span> — `;
-                }
-                
-                messageText += `<strong class="inbox-sender">${message.from}</strong>: `;
-                
-                // Обрабатываем текст сообщения
-                let text = message.text || "";
-                text = text.replace(/\s+/g, " ").trim(); // Убираем лишние пробелы
-                
-                if (text.length > this.config.maxChars) {
-                    text = text.substring(0, this.config.maxChars) + "…";
-                }
-                
-                messageText += `<span class="inbox-text">${text}</span>`;
-                
-                messageElement.innerHTML = messageText;
-                messagesContainer.appendChild(messageElement);
-            });
+        if (!this.items || this.items.length === 0) {
+            const empty = document.createElement("div");
+            empty.textContent = "Нет новых сообщений";
+            wrapper.appendChild(empty);
+            return wrapper;
         }
 
-        wrapper.appendChild(messagesContainer);
+        const ul = document.createElement("ul");
+        this.items.slice(0, this.config.maxItems).forEach((m) => {
+            const li = document.createElement("li");
+
+            if (this.config.showTime && m.time) {
+                const t = document.createElement("span");
+                t.className = "ili-time";
+                t.textContent = `[${m.time}]`;
+                li.appendChild(t);
+            }
+
+            const from = document.createElement("span");
+            from.className = "ili-from";
+            from.textContent = `${m.from}:`;
+            li.appendChild(from);
+
+            const text = document.createElement("span");
+            text.className = "ili-text";
+            text.textContent = this.truncate((m.text || "").replace(/\s+/g, " ").trim(), this.config.maxChars);
+            li.appendChild(text);
+
+            ul.appendChild(li);
+        });
+        wrapper.appendChild(ul);
         return wrapper;
     },
 
-    // Стили модуля
+    truncate: function(str, n) {
+        if (!str) return "";
+        return str.length > n ? str.slice(0, n) + "…" : str;
+    },
+
     getStyles: function() {
         return ["MMM-LocalInbox.css"];
     }
