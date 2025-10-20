@@ -85,6 +85,17 @@ let config = {
 			position: "lower_third"
 		},
 		{
+			module: "MMM-WeekAgenda",
+			position: "bottom_center",
+			config: {
+				header: "Неделя",
+				maxPerDay: 6,
+				showTime: true,
+				timeFormat: "HH:mm",
+				weekStartsOnMonday: true
+			}
+		},
+		{
 			module: "weather",
 			position: "top_right",
 			config: {
