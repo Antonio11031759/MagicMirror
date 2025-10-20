@@ -37,63 +37,47 @@ Module.register("MMM-WeekAgenda", {
 
   getDom() {
     const wrapper = document.createElement("div");
-    wrapper.className = "wa-container";
+    wrapper.className = "wa-vertical";
 
-    const grid = document.createElement("div");
-    grid.className = "wa-grid";
+    const week = this._currentWeekDays();
+    week.forEach((day) => {
+      const block = document.createElement("div");
+      block.className = "wa-day";
 
-    // Header row: Mon..Sun (or Sun..Sat)
-    const headerRow = document.createElement("div");
-    headerRow.className = "wa-row wa-header";
-    this._orderedDays().forEach((d) => {
-      const cell = document.createElement("div");
-      cell.className = "wa-col wa-col-header";
-      cell.textContent = d.label;
-      headerRow.appendChild(cell);
-    });
-    grid.appendChild(headerRow);
+      const header = document.createElement("div");
+      header.className = "wa-day-header";
+      header.textContent = `${day.label} (${day.dateLabel})`;
+      block.appendChild(header);
 
-    // Events row (single row with 7 columns)
-    const eventsRow = document.createElement("div");
-    eventsRow.className = "wa-row wa-events";
-
-    this._orderedDays().forEach((d) => {
-      const cell = document.createElement("div");
-      cell.className = "wa-col wa-col-events";
-
-      const ul = document.createElement("ul");
-      const items = this.days[d.key] || [];
-      items.slice(0, this.config.maxPerDay).forEach((ev) => {
-        const li = document.createElement("li");
-        li.className = "wa-item";
-
-        if (this.config.showTime && ev.time) {
-          const t = document.createElement("span");
-          t.className = "wa-time";
-          t.textContent = `[${ev.time}] `;
-          li.appendChild(t);
-        }
-
-        const title = document.createElement("span");
-        title.className = "wa-title";
-        title.textContent = ev.title;
-        li.appendChild(title);
-        ul.appendChild(li);
-      });
-
+      const items = (this.days[day.key] || []).slice(0, this.config.maxPerDay);
       if (items.length === 0) {
         const empty = document.createElement("div");
         empty.className = "wa-empty";
-        empty.textContent = "—";
-        cell.appendChild(empty);
+        empty.textContent = "нет ничего";
+        block.appendChild(empty);
       } else {
-        cell.appendChild(ul);
+        const ul = document.createElement("ul");
+        items.forEach((ev) => {
+          const li = document.createElement("li");
+          li.className = "wa-item";
+          if (this.config.showTime && ev.time) {
+            const t = document.createElement("span");
+            t.className = "wa-time";
+            t.textContent = `[${ev.time}] `;
+            li.appendChild(t);
+          }
+          const title = document.createElement("span");
+          title.className = "wa-title";
+          title.textContent = ev.title;
+          li.appendChild(title);
+          ul.appendChild(li);
+        });
+        block.appendChild(ul);
       }
-      eventsRow.appendChild(cell);
-    });
-    grid.appendChild(eventsRow);
 
-    wrapper.appendChild(grid);
+      wrapper.appendChild(block);
+    });
+
     return wrapper;
   },
 
@@ -103,15 +87,35 @@ Module.register("MMM-WeekAgenda", {
 
   _orderedDays() {
     const days = [
-      { key: "mon", label: "Пн" },
-      { key: "tue", label: "Вт" },
-      { key: "wed", label: "Ср" },
-      { key: "thu", label: "Чт" },
-      { key: "fri", label: "Пт" },
-      { key: "sat", label: "Сб" },
-      { key: "sun", label: "Вс" }
+      { key: "mon", label: "Понедельник" },
+      { key: "tue", label: "Вторник" },
+      { key: "wed", label: "Среда" },
+      { key: "thu", label: "Четверг" },
+      { key: "fri", label: "Пятница" },
+      { key: "sat", label: "Суббота" },
+      { key: "sun", label: "Воскресенье" }
     ];
     return this.config.weekStartsOnMonday ? days : [days[6]].concat(days.slice(0, 6));
+  },
+
+  _currentWeekDays() {
+    const today = new Date();
+    const jsDay = today.getDay(); // 0=Sun..6=Sat
+    const mondayOffset = this.config.weekStartsOnMonday ? ((jsDay + 6) % 7) : jsDay;
+    const start = new Date(today);
+    start.setHours(0, 0, 0, 0);
+    start.setDate(today.getDate() - mondayOffset);
+
+    const result = [];
+    const days = this._orderedDays();
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      const dd = (n) => (n < 10 ? `0${n}` : `${n}`);
+      const dateLabel = `${dd(d.getDate())}.${dd(d.getMonth() + 1)}.${d.getFullYear()}`;
+      result.push({ key: days[i].key, label: days[i].label, dateObj: d, dateLabel });
+    }
+    return result;
   },
 
   _weekdayKeyFromDate(dateObj) {
