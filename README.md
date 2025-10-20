@@ -7,8 +7,8 @@
 ```
 Mirror/
 ├── install_telegram.sh          # Скрипт автоматической установки
-├── userbot_daemon.py            # Python USERBOT для Telegram
-├── env_config                   # Конфигурация API ключей
+├── telegram-bot.js              # Telegraf бот для Telegram (Bot API)
+├── .env.sample                  # Пример .env для бота
 ├── inbox.json                   # Пустой JSON файл для сообщений
 ├── mirror_inbox.service         # systemd сервис
 ├── config_example.js            # Пример конфигурации модуля
@@ -19,12 +19,36 @@ Mirror/
 └── README.md                    # Документация
 ```
 
+## ✅ Новая интеграция через официальный Telegram Bot API (Telegraf)
+
+Рекомендуемая схема без USERBOT/Telethon. Бот получает `channel_post` из приватного канала и пишет последние 3 текстовых сообщения в `/home/anton/mirror_inbox/inbox.json`.
+
+### Требования
+- Токен бота из BotFather
+- Node.js >= 22.18.0
+
+### Установка и запуск
+```bash
+cd ~/MagicMirror
+cp env.sample .env
+# отредактируйте .env и задайте:
+# BOT_TOKEN=123456:ABC...
+# OUTPUT_JSON=/home/anton/mirror_inbox/inbox.json
+# MAX_ITEMS=3
+# TIMEZONE=Europe/Berlin
+
+npm install
+npm run telegram:bot
+```
+
+Добавьте бота администратором в приватный канал "Mirror Inbox" (у бота должен быть доступ к чтению сообщений канала). Публикуйте тексты — файл будет обновляться.
+
 ## 🚀 Быстрая установка на Raspberry Pi
 
 ### Предварительные требования
 
 - Raspberry Pi с установленным MagicMirror²
-- Telegram API ID и API Hash (получить на https://my.telegram.org)
+- Telegram Bot token (получить у BotFather)
 - Node.js версии >=22.18.0
 
 ### ⚡ Автоматическая установка (рекомендуется)
@@ -56,11 +80,9 @@ bash install_telegram.sh
 # Обновляем систему
 sudo apt update && sudo apt upgrade -y
 
-# Устанавливаем Python и pip
-sudo apt install -y python3 python3-pip
-
-# Устанавливаем Python библиотеки
-pip3 install --user telethon python-dotenv --break-system-packages
+# Устанавливаем зависимости проекта
+cd ~/MagicMirror
+npm install
 ```
 
 ### 2. Создание Telegram USERBOT
