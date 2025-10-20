@@ -1,4 +1,4 @@
-/* global Module, Log */
+/* global Module, Log, moment */
 
 Module.register("MMM-LocalInbox", {
     defaults: {
@@ -7,30 +7,24 @@ Module.register("MMM-LocalInbox", {
         maxItems: 3,
         maxChars: 80,
         showTime: true,
-        header: "Сообщения"
+        header: "Сообщения",
+        timezone: "Europe/Berlin"
     },
 
     start: function() {
         this.items = [];
-        this.error = null;
-        this.readNow();
-        this.scheduleUpdate();
-    },
-
-    scheduleUpdate: function() {
-        const interval = this.config.pollInterval || 5000;
-        setInterval(() => this.readNow(), interval);
-    },
-
-    readNow: function() {
-        this.sendSocketNotification("INBOX_READ", { jsonPath: this.config.jsonPath, maxItems: this.config.maxItems });
+        this.sendSocketNotification("LOCALINBOX_CONFIG", {
+            jsonPath: this.config.jsonPath,
+            pollInterval: this.config.pollInterval || 3000,
+            timezone: this.config.timezone || "Europe/Berlin"
+        });
     },
 
     socketNotificationReceived: function(notification, payload) {
-        if (notification !== "INBOX_DATA") return;
-        this.items = (payload && payload.items) || [];
-        this.error = payload ? payload.error : null;
-        this.updateDom({ animationSpeed: 300 });
+        if (notification === "LOCALINBOX_UPDATE") {
+            this.items = payload;
+            this.updateDom();
+        }
     },
 
     getHeader: function() {
@@ -41,15 +35,6 @@ Module.register("MMM-LocalInbox", {
     getDom: function() {
         const wrapper = document.createElement("div");
         wrapper.className = "localinbox";
-
-        if (this.error) {
-            const err = document.createElement("div");
-            err.style.opacity = 0.7;
-            err.style.fontSize = "85%";
-            err.textContent = this.error;
-            wrapper.appendChild(err);
-            return wrapper;
-        }
 
         if (!this.items || this.items.length === 0) {
             const empty = document.createElement("div");
@@ -88,6 +73,10 @@ Module.register("MMM-LocalInbox", {
     truncate: function(str, n) {
         if (!str) return "";
         return str.length > n ? str.slice(0, n) + "…" : str;
+    },
+
+    getScripts: function() {
+        return ["moment.js", "moment-timezone.js"];
     },
 
     getStyles: function() {

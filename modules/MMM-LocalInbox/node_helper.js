@@ -1,42 +1,54 @@
-/* global NodeHelper, Log */
+const NodeHelper = require("node_helper");
 const fs = require("fs");
+const moment = require("moment-timezone");
 
-NodeHelper.register("MMM-LocalInbox", {
-    start: function() {
-        Log.info("Starting node helper for: " + this.name);
-    },
+module.exports = NodeHelper.create({
+  start() {
+    this.timer = null;
+    this.jsonPath = null;
+    this.pollInterval = 5000;
+    this.timezone = "Europe/Berlin";
+    console.log("MMM-LocalInbox helper started");
+  },
 
-    socketNotificationReceived: async function(notification, payload) {
-        if (notification !== "INBOX_READ") return;
-
-        const jsonPath = payload && payload.jsonPath;
-        const maxItems = (payload && payload.maxItems) || 3;
-
-        if (!jsonPath) {
-            this.sendSocketNotification("INBOX_DATA", { items: [], error: "jsonPath not provided" });
-            return;
-        }
-
-        try {
-            if (!fs.existsSync(jsonPath)) {
-                this.sendSocketNotification("INBOX_DATA", { items: [], error: null });
-                return;
-            }
-
-            const raw = fs.readFileSync(jsonPath, "utf8");
-            let data = [];
-            try {
-                const parsed = JSON.parse(raw);
-                data = Array.isArray(parsed) ? parsed : [];
-            } catch (e) {
-                this.sendSocketNotification("INBOX_DATA", { items: [], error: "Invalid JSON" });
-                return;
-            }
-
-            const items = data.slice(0, maxItems);
-            this.sendSocketNotification("INBOX_DATA", { items, error: null });
-        } catch (error) {
-            this.sendSocketNotification("INBOX_DATA", { items: [], error: String(error && error.message || error) });
-        }
+  socketNotificationReceived(notification, payload) {
+    if (notification === "LOCALINBOX_CONFIG") {
+      this.jsonPath = payload.jsonPath;
+      this.pollInterval = Number(payload.pollInterval || 5000);
+      this.timezone = payload.timezone || "Europe/Berlin";
+      if (this.timer) clearInterval(this.timer);
+      this.readAndBroadcast();
+      this.timer = setInterval(() => this.readAndBroadcast(), this.pollInterval);
     }
+  },
+
+  readAndBroadcast() {
+    if (!this.jsonPath) return;
+    try {
+      const raw = fs.readFileSync(this.jsonPath, "utf-8");
+      const data = JSON.parse(raw);
+      
+      // Process each message to ensure time is in Berlin timezone
+      const processedData = Array.isArray(data) ? data.map(msg => {
+        if (msg.time) {
+          // If time is already formatted, keep it; otherwise format it
+          return msg;
+        } else {
+          // If no time field, add current Berlin time
+          return {
+            ...msg,
+            time: moment().tz(this.timezone).format("HH:mm")
+          };
+        }
+      }) : [];
+      
+      this.sendSocketNotification("LOCALINBOX_UPDATE", processedData);
+    } catch (e) {
+      this.sendSocketNotification("LOCALINBOX_UPDATE", []);
+    }
+  },
+
+  stop() {
+    if (this.timer) clearInterval(this.timer);
+  }
 });
