@@ -61,7 +61,8 @@
 		"test:markdown": "markdownlint-cli2 .",
 		"test:prettier": "prettier . --check",
 		"test:spelling": "cspell . --gitignore",
-		"test:unit": "NODE_ENV=test jest --selectProjects unit"
+		"test:unit": "NODE_ENV=test jest --selectProjects unit",
+		"telegram:bot": "node telegram-bot.js"
 	},
 	"lint-staged": {
 		"*": "prettier --ignore-unknown --write",
@@ -94,7 +95,9 @@
 		"suncalc": "^1.9.0",
 		"systeminformation": "^5.27.10",
 		"undici": "^7.16.0",
-		"weathericons": "^2.1.0"
+		"weathericons": "^2.1.0",
+		"dotenv": "^16.4.5",
+		"telegraf": "^4.16.3"
 	},
 	"devDependencies": {
 		"@stylistic/eslint-plugin": "^5.4.0",
