@@ -86,7 +86,7 @@ let config = {
 		},
 		{
 			module: "MMM-WeekAgenda",
-			position: "bottom_center",
+			position: "bottom_left",
 			config: {
 				header: "Неделя",
 				maxPerDay: 6,
