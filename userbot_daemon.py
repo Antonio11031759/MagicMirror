@@ -1,172 +1,102 @@
 #!/usr/bin/env python3
-"""
-Telegram USERBOT для MagicMirror
-Слушает входящие сообщения и записывает последние N сообщений в JSON файл
-"""
-
-import asyncio
-import json
-import os
-import sys
+import asyncio, json, os, sys
 from datetime import datetime
 from pathlib import Path
-from typing import List, Dict, Any, Optional
-
+from typing import List, Dict, Any
+from dotenv import load_dotenv
 from telethon import TelegramClient, events
 from telethon.tl.types import User, Chat, Channel
-from dotenv import load_dotenv
 
-# Загружаем переменные окружения
 load_dotenv()
 
-class TelegramInboxBot:
-    def __init__(self):
-        # Настройки из .env
-        self.api_id = os.getenv('API_ID')
-        self.api_hash = os.getenv('API_HASH')
-        self.session_name = os.getenv('SESSION_NAME', 'mirror_inbox')
-        self.output_json = os.getenv('OUTPUT_JSON', '/home/anton/MagicMirror/modules/MMM-TelegramInbox/inbox.json')
-        self.max_items = int(os.getenv('MAX_ITEMS', '3'))
-        
-        # Проверяем обязательные параметры
-        if not self.api_id or not self.api_hash:
-            print("ОШИБКА: Необходимо указать API_ID и API_HASH в .env файле")
-            sys.exit(1)
-        
-        # Создаём клиент Telegram
-        self.client = TelegramClient(self.session_name, self.api_id, self.api_hash)
-        
-        # Список сообщений
-        self.messages: List[Dict[str, Any]] = []
-        
-        # Создаём директорию для выходного файла если её нет
-        Path(self.output_json).parent.mkdir(parents=True, exist_ok=True)
-        
-        print(f"Инициализация бота:")
-        print(f"  - API ID: {self.api_id}")
-        print(f"  - Session: {self.session_name}")
-        print(f"  - Output JSON: {self.output_json}")
-        print(f"  - Max items: {self.max_items}")
-    
-    def get_sender_name(self, sender) -> str:
-        """Получает имя отправителя"""
+API_ID = os.getenv("API_ID")
+API_HASH = os.getenv("API_HASH")
+SESSION_NAME = os.getenv("SESSION_NAME", "mirror_inbox")
+OUTPUT_JSON = os.getenv("OUTPUT_JSON", str(Path.home() / "mirror_inbox" / "inbox.json"))
+MAX_ITEMS = int(os.getenv("MAX_ITEMS", "3"))
+TIMEZONE = os.getenv("TIMEZONE", "Europe/Berlin")
+
+if not API_ID or not API_HASH:
+    print("ERROR: API_ID and API_HASH must be set in .env")
+    sys.exit(1)
+
+Path(OUTPUT_JSON).parent.mkdir(parents=True, exist_ok=True)
+
+client = TelegramClient(SESSION_NAME, API_ID, API_HASH)
+messages: List[Dict[str, Any]] = []
+
+def store_messages() -> None:
+    to_write = messages[:MAX_ITEMS]
+    try:
+        with open(OUTPUT_JSON, "w", encoding="utf-8") as f:
+            json.dump(to_write, f, ensure_ascii=False, indent=2)
+        print(f"Stored {len(to_write)} messages to {OUTPUT_JSON}", flush=True)
+    except Exception as e:
+        print(f"Failed writing {OUTPUT_JSON}: {e}", flush=True)
+
+@client.on(events.NewMessage(incoming=True))
+async def handler(event):
+    try:
+        sender = await event.get_sender()
         if isinstance(sender, User):
-            if sender.first_name:
-                name = sender.first_name
-                if sender.last_name:
-                    name += f" {sender.last_name}"
-                return name
-            elif sender.username:
-                return f"@{sender.username}"
+            if sender.first_name or sender.last_name:
+                name = " ".join(filter(None, [sender.first_name, sender.last_name]))
             else:
-                return "Без имени"
+                name = f"@{sender.username}" if sender.username else "Unknown"
         elif isinstance(sender, (Chat, Channel)):
-            return sender.title or "Группа"
+            name = sender.title or "Channel"
         else:
-            return "Неизвестно"
-    
-    def add_message(self, message_text: str, sender):
-        """Добавляет новое сообщение в список"""
-        sender_name = self.get_sender_name(sender)
-        
-        new_message = {
-            "from": sender_name,
-            "text": message_text.strip()
-        }
-        
-        # Добавляем в начало списка
-        self.messages.insert(0, new_message)
-        
-        # Ограничиваем количество сообщений
-        if len(self.messages) > self.max_items:
-            self.messages = self.messages[:self.max_items]
-        
-        print(f"Добавлено сообщение: {sender_name}: {message_text[:50]}...")
-    
-    def save_messages_to_json(self):
-        """Сохраняет сообщения в JSON файл"""
-        try:
-            with open(self.output_json, 'w', encoding='utf-8') as f:
-                json.dump(self.messages, f, ensure_ascii=False, indent=2)
-            print(f"Сохранено {len(self.messages)} сообщений в {self.output_json}")
-        except Exception as e:
-            print(f"Ошибка сохранения JSON: {e}")
-    
-    async def handle_new_message(self, event):
-        """Обрабатывает новое входящее сообщение"""
-        try:
-            # Получаем сообщение
-            message = event.message
-            
-            # Проверяем, что это текстовое сообщение
-            if not message.text:
-                return
-            
-            # Получаем отправителя
-            sender = await message.get_sender()
-            if not sender:
-                return
-            
-            # Добавляем сообщение
-            self.add_message(message.text, sender)
-            
-            # Сохраняем в JSON
-            self.save_messages_to_json()
-            
-        except Exception as e:
-            print(f"Ошибка обработки сообщения: {e}")
-    
-    async def start_bot(self):
-        """Запускает бота"""
-        print("Запуск Telegram userbot...")
-        
-        # Подключаемся к Telegram
-        await self.client.start()
-        
-        # Проверяем авторизацию
-        me = await self.client.get_me()
-        print(f"Авторизован как: {me.first_name} (@{me.username})")
-        
-        # Регистрируем обработчик новых сообщений
-        self.client.add_event_handler(
-            self.handle_new_message,
-            events.NewMessage(incoming=True)
-        )
-        
-        print("Бот запущен и слушает входящие сообщения...")
-        print("Нажмите Ctrl+C для остановки")
-        
-        # Инициализируем пустой JSON файл
-        self.save_messages_to_json()
-        
-        # Ждём до бесконечности
-        try:
-            await self.client.run_until_disconnected()
-        except KeyboardInterrupt:
-            print("\nПолучен сигнал остановки...")
-        finally:
-            await self.client.disconnect()
-            print("Бот остановлен")
+            name = "Unknown"
+
+        text = event.message.message or ""
+        ts = datetime.now().strftime("%H:%M")
+        entry = {"time": ts, "from": name, "text": text}
+
+        # prepend new message; keep only MAX_ITEMS
+        global messages
+        messages = [entry] + messages
+        messages = messages[:MAX_ITEMS]
+        store_messages()
+        print(f"New message from {name}: {text[:50]}...", flush=True)
+    except Exception as e:
+        print(f"Handler error: {e}", flush=True)
+
+async def bootstrap():
+    # Load last messages file if exists
+    try:
+        if Path(OUTPUT_JSON).exists():
+            with open(OUTPUT_JSON, "r", encoding="utf-8") as f:
+                loaded = json.load(f)
+                if isinstance(loaded, list):
+                    # Ensure we have fields time/from/text
+                    valid = []
+                    for m in loaded[:MAX_ITEMS]:
+                        valid.append({
+                            "time": m.get("time", ""),
+                            "from": m.get("from", ""),
+                            "text": m.get("text", "")
+                        })
+                    global messages
+                    messages = valid
+                    print(f"Loaded {len(messages)} messages from file", flush=True)
+    except Exception as e:
+        print(f"Bootstrap read error: {e}", flush=True)
+
+    print("Userbot is running. Press Ctrl+C to stop.", flush=True)
+    await client.run_until_disconnected()
 
 def main():
-    """Главная функция"""
-    print("=== Telegram USERBOT для MagicMirror ===")
-    
-    # Проверяем наличие .env файла
-    env_file = Path('.env')
-    if not env_file.exists():
-        print("ОШИБКА: Файл .env не найден!")
-        print("Создайте файл .env с необходимыми параметрами")
-        sys.exit(1)
-    
-    # Создаём и запускаем бота
-    bot = TelegramInboxBot()
-    
+    loop = asyncio.get_event_loop()
     try:
-        asyncio.run(bot.start_bot())
-    except Exception as e:
-        print(f"Критическая ошибка: {e}")
-        sys.exit(1)
+        client.start()
+        loop.run_until_complete(bootstrap())
+    except KeyboardInterrupt:
+        pass
+    finally:
+        try:
+            loop.run_until_complete(client.disconnect())
+        except Exception:
+            pass
 
 if __name__ == "__main__":
     main()
