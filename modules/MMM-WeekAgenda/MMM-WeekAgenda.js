@@ -40,6 +40,9 @@ Module.register("MMM-WeekAgenda", {
     wrapper.className = "wa-vertical";
 
     const week = this._currentWeekDays();
+    // Re-group strictly for the visible week (ensures no "перемешано")
+    this.days = this._groupByDayForWeek(this.events, week);
+
     week.forEach((day) => {
       const block = document.createElement("div");
       block.className = "wa-day";
@@ -147,8 +150,62 @@ Module.register("MMM-WeekAgenda", {
           result[key].push({ title, time });
         }
       });
+      // sort items in each day by time asc
+      Object.keys(result).forEach((k) => {
+        result[k].sort((a, b) => {
+          if (!a.time && !b.time) return 0;
+          if (!a.time) return 1;
+          if (!b.time) return -1;
+          return a.time.localeCompare(b.time);
+        });
+      });
     } catch (e) {
       Log.error("WeekAgenda grouping error: " + (e && e.message));
+    }
+    return result;
+  }
+
+  ,_groupByDayForWeek(eventList, weekDays) {
+    // Build a map of YYYY-MM-DD -> dayKey for the visible week
+    const dayMap = {};
+    const pad = (n) => (n < 10 ? `0${n}` : `${n}`);
+    weekDays.forEach((d) => {
+      const ds = `${d.dateObj.getFullYear()}-${pad(d.dateObj.getMonth() + 1)}-${pad(d.dateObj.getDate())}`;
+      dayMap[ds] = d.key;
+    });
+
+    const result = this._initEmptyWeek();
+    const toDayString = (date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+    const formatTime = (date) => {
+      try {
+        const options = { hour: "2-digit", minute: "2-digit", hour12: false };
+        return new Intl.DateTimeFormat(undefined, options).format(date);
+      } catch (e) {
+        return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+      }
+    };
+
+    try {
+      eventList.forEach((ev) => {
+        const start = new Date(Number(ev.startDate));
+        const dayStr = toDayString(start);
+        const key = dayMap[dayStr];
+        if (!key) return; // skip events outside the visible week
+        const title = ev.title || "(без названия)";
+        const time = this.config.showTime ? formatTime(start) : "";
+        result[key].push({ title, time });
+      });
+      // sort within each day by time asc
+      Object.keys(result).forEach((k) => {
+        result[k].sort((a, b) => {
+          if (!a.time && !b.time) return 0;
+          if (!a.time) return 1;
+          if (!b.time) return -1;
+          return a.time.localeCompare(b.time);
+        });
+      });
+    } catch (e) {
+      Log.error("WeekAgenda week-grouping error: " + (e && e.message));
     }
     return result;
   }
