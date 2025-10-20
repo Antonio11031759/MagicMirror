@@ -81,10 +81,6 @@ let config = {
 		   }
 		},
 		{
-			module: "compliments",
-			position: "lower_third"
-		},
-		{
 			module: "MMM-WeekAgenda",
 			position: "bottom_left",
 			config: {
