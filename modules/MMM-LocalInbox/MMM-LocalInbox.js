@@ -34,7 +34,8 @@ Module.register("MMM-LocalInbox", {
     },
 
     getHeader: function() {
-        return this.config.header || "";
+        // Support both top-level module header and config.header
+        return (this.data && this.data.header) || this.config.header || "";
     },
 
     getDom: function() {
