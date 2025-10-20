@@ -3,11 +3,13 @@
 Module.register("MMM-TelegramInbox", {
     // Настройки по умолчанию
     defaults: {
-        jsonPath: "/home/anton/MagicMirror/modules/MMM-TelegramInbox/inbox.json",
-        pollInterval: 10000,   // 10 секунд
+        jsonPath: "/home/anton/mirror_inbox/inbox.json",
+        pollInterval: 5000,   // мс
         maxItems: 3,
-        maxChars: 100,
-        header: "📱 Telegram"
+        maxChars: 80,
+        showTime: true,
+        hideWhenEmpty: false,
+        header: "Telegram"
     },
 
     // Инициализация модуля
@@ -46,13 +48,7 @@ Module.register("MMM-TelegramInbox", {
         const messagesContainer = document.createElement("div");
         messagesContainer.className = "telegram-messages";
 
-        if (this.messages.length === 0) {
-            // Нет сообщений
-            const noMessages = document.createElement("div");
-            noMessages.className = "telegram-no-messages";
-            noMessages.innerHTML = "Нет новых сообщений";
-            messagesContainer.appendChild(noMessages);
-        } else {
+        if (this.messages.length > 0) {
             // Отображаем сообщения
             const messagesToShow = this.messages.slice(0, this.config.maxItems);
             
@@ -61,7 +57,11 @@ Module.register("MMM-TelegramInbox", {
                 messageElement.className = "telegram-message";
                 
                 // Формируем строку сообщения в формате "Имя — текст"
-                let messageText = `<strong class="telegram-sender">${message.from}</strong> — `;
+                let messageText = "";
+                if (this.config.showTime && message.time) {
+                    messageText += `<span class="telegram-time">${message.time}</span> — `;
+                }
+                messageText += `<strong class="telegram-sender">${message.from}</strong> — `;
                 
                 // Обрабатываем текст сообщения
                 let text = message.text || "";
@@ -76,6 +76,12 @@ Module.register("MMM-TelegramInbox", {
                 messageElement.innerHTML = messageText;
                 messagesContainer.appendChild(messageElement);
             });
+        } else {
+            // Нет сообщений - показываем заглушку
+            const noMessages = document.createElement("div");
+            noMessages.className = "telegram-no-messages";
+            noMessages.innerHTML = "Нет новых сообщений";
+            messagesContainer.appendChild(noMessages);
         }
 
         wrapper.appendChild(messagesContainer);
