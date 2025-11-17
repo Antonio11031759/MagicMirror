@@ -50,37 +50,6 @@ let config = {
 			position: "top_left"
 		},
 		{
-			module: "calendar",
-			header: "Google Календарь",
-			position: "top_left",
-			config: {
-				calendars: [
-					{
-						fetchInterval: 1 * 60 * 1000,
-						symbol: "calendar-check",
-						url: "https://calendar.google.com/calendar/ical/aliabiev11%40gmail.com/private-d513a1787680b595386ca85d7159078a/basic.ics"
-					}
-				],
-				views: [
-     				  {
-       				    name: "MonthView",
-        			    mode: "month",
-        			    firstDayOfWeek: 1,
-        			    weeks: 6,
-        			    locale: "ru-RU",
-        			    refreshInterval: 5 * 60 * 1000,
-        			    calendars: ["GoogleMain"],
-        			    eventTitleFormat: "HH:mm — [ ]title",
-        			    fullDayEventText: "Весь день",
-        			    range: { from: -1, to: 60 }
-      				   }
-    				],
-    				scenes: [
-      				  { name: "Default", views: ["MonthView"] }
-			]
-		   }
-		},
-		{
 			module: "MMM-WeekAgenda",
 			position: "bottom_left",
 			config: {
