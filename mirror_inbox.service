@@ -1,7 +1,5 @@
-; removed - no longer used
-
 [Unit]
-Description=Telegram USERBOT inbox writer (Telethon)
+Description=Telegram Bot inbox writer (aiogram)
 After=network-online.target
 Wants=network-online.target
 
@@ -9,8 +7,8 @@ Wants=network-online.target
 Type=simple
 User=anton
 Group=anton
-WorkingDirectory=/home/anton/mirror_inbox
-ExecStart=/usr/bin/python3 /home/anton/mirror_inbox/userbot_daemon.py
+WorkingDirectory=/home/anton/MagicMirror/mirror_inbox
+ExecStart=/usr/bin/python3 /home/anton/MagicMirror/mirror_inbox/bot_listener.py
 Restart=always
 RestartSec=5
 Environment=PYTHONUNBUFFERED=1
