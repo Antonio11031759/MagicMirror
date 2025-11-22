@@ -10,9 +10,12 @@ from aiogram import Bot, Dispatcher, F
 from aiogram.types import Message
 
 
-ABS_DIR = Path("/home/anton/mirror_inbox")
+# Автоматически определяем директорию скрипта
+SCRIPT_DIR = Path(__file__).parent.resolve()
+ABS_DIR = SCRIPT_DIR
 ENV_PATH = ABS_DIR / ".env"
-DEFAULT_JSON = ABS_DIR / "inbox.json"
+# По умолчанию JSON в корне проекта MagicMirror
+DEFAULT_JSON = SCRIPT_DIR.parent / "inbox.json"
 
 
 def ensure_dir_and_files():
